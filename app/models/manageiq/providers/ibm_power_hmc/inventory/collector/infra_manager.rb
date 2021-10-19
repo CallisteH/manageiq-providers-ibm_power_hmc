@@ -5,39 +5,41 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::InfraManager < Man
 
   def collect!
     $ibm_power_hmc_log.info("#{self.class}##{__method__}")
-    @hosts = connection.managed_systems
-    @vms = []
-    @vswitches = []
-    @hosts.each do |sys|
-      @vms += connection.lpars(sys.uuid)
+    manager.with_provider_connection do |connection|
+      @cecs = connection.managed_systems
+
+      @lpars = @cecs.map do |sys|
+        connection.lpars(sys.uuid)
+      rescue IbmPowerHmc::Connection::HttpError => e
+        $ibm_power_hmc_log.error("lpars query failed for #{sys.uuid}: #{e}")
+        nil
+      end.flatten.compact
+      
+      @vswitches = @cecs.map do |sys|
+        connection.virtual_switches(sys.uuid)
+      rescue IbmPowerHmc::Connection::HttpError => e
+        $ibm_power_hmc_log.error("virtual_switches query failed for #{sys.uuid} reason=#{e.reason} message=#{e.message}")
+      end
+
+      @vioses = @cecs.map do |sys|
+        connection.vioses(sys.uuid)
+      rescue IbmPowerHmc::Connection::HttpError => e
+        $ibm_power_hmc_log.error("vioses query failed for #{sys.uuid} #{e}")
+        nil
+      end.flatten.compact
+
+      $ibm_power_hmc_log.info("end collection")
     rescue IbmPowerHmc::Connection::HttpError => e
-      $ibm_power_hmc_log.error("lpars query failed for #{sys.uuid} reason=#{e.reason} message=#{e.message}")
-    end
-    @hosts.each do |sys|
-      @vms += connection.vioses(sys.uuid)
-    rescue IbmPowerHmc::Connection::HttpError => e
-      $ibm_power_hmc_log.error("vioses query failed for #{sys.uuid} reason=#{e.reason} message=#{e.message}")
-    end
-    @hosts.each do |sys|
-      @vswitches += connection.virtual_switches(sys.uuid)
-    rescue IbmPowerHmc::Connection::HttpError => e
-      $ibm_power_hmc_log.error("virtual_switches query failed for #{sys.uuid} reason=#{e.reason} message=#{e.message}")
-    end
-    connection.logoff
-    $ibm_power_hmc_log.info("end collection")
-  rescue IbmPowerHmc::Connection::HttpError => e
-    $ibm_power_hmc_log.error("managed systems query failed reason=#{e.reason} message=#{e.message}")
-  ensure
-    # Make sure we do not leak HMC sessions
-    connection.logoff
+      $ibm_power_hmc_log.error("managed systems query failed: #{e}")
+    end  
   end
 
-  def hosts
-    @hosts || []
+  def cecs
+    @cecs || []
   end
 
-  def vms
-    @vms || []
+  def lpars
+    @lpars || []
   end
 
   def vswitches
@@ -46,7 +48,7 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::InfraManager < Man
 
   private
 
-  def connection
-    @connection ||= manager.connect
+  def vioses
+    @vioses || []
   end
 end

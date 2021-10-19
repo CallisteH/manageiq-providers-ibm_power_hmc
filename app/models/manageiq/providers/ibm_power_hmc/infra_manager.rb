@@ -7,13 +7,15 @@ class ManageIQ::Providers::IbmPowerHmc::InfraManager < ManageIQ::Providers::Infr
   require_nested :Refresher
   require_nested :RefreshWorker
   require_nested :Vm
+  require_nested :Lpar
+  require_nested :Vios
 
   def self.params_for_create
     @params_for_create ||= {
       :fields => [
         {
           :component => 'sub-form',
-          :d         => 'endpoints-subform',
+          :id        => 'endpoints-subform',
           :name      => 'endpoints-subform',
           :title     => _('Endpoints'),
           :fields    => [
@@ -96,6 +98,7 @@ class ManageIQ::Providers::IbmPowerHmc::InfraManager < ManageIQ::Providers::Infr
     authentication = args.dig("authentications", "default")
     userid, password = authentication&.values_at("userid", "password")
     password = ManageIQ::Password.try_decrypt(password)
+    password ||= find(args["id"]).authentication_password(authtype) if args['id']
 
     !!raw_connect(hostname, port, userid, password, validate_ssl, true)
   end
@@ -122,9 +125,8 @@ class ManageIQ::Providers::IbmPowerHmc::InfraManager < ManageIQ::Providers::Infr
     self.class.raw_connect(hostname, port, userid, password, validate_ssl, options[:validate])
   end
 
-  def self.hostname_required?
-    # TODO: ExtManagementSystem is validating this
-    true
+  def disconnect(connection)
+    connection.logoff
   end
 
   def self.raw_connect(hostname, port, userid, password, validate_ssl, validate)
