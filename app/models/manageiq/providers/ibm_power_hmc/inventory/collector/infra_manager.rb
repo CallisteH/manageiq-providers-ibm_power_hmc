@@ -7,6 +7,7 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::InfraManager < Man
     $ibm_power_hmc_log.info("#{self.class}##{__method__}")
     @hosts = connection.managed_systems
     @vms = []
+    @vswitches = []
     @hosts.each do |sys|
       @vms += connection.lpars(sys.uuid)
     rescue IbmPowerHmc::Connection::HttpError => e
@@ -16,6 +17,11 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::InfraManager < Man
       @vms += connection.vioses(sys.uuid)
     rescue IbmPowerHmc::Connection::HttpError => e
       $ibm_power_hmc_log.error("vioses query failed for #{sys.uuid} reason=#{e.reason} message=#{e.message}")
+    end
+    @hosts.each do |sys|
+      @vswitches += connection.virtual_switches(sys.uuid)
+    rescue IbmPowerHmc::Connection::HttpError => e
+      $ibm_power_hmc_log.error("virtual_switches query failed for #{sys.uuid} reason=#{e.reason} message=#{e.message}")
     end
     connection.logoff
     $ibm_power_hmc_log.info("end collection")
@@ -32,6 +38,10 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::InfraManager < Man
 
   def vms
     @vms || []
+  end
+
+  def vswitches
+    @vswitches || []
   end
 
   private

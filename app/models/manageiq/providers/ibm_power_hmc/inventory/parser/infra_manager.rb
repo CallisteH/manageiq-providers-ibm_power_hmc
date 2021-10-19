@@ -5,6 +5,7 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Parser::InfraManager < Manage
 
     parse_hosts
     parse_vms
+    parse_vswitches
   end
 
   def parse_hosts
@@ -84,6 +85,19 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Parser::InfraManager < Manage
       :vm_or_template => vm,
       :memory_mb      => lpar.memory
     )
+  end
+
+  def parse_vswitches
+    $ibm_power_hmc_log.info("#{self.class}##{__method__}")
+    collector.vswitches.each do |vswitch|
+      host = persister.hosts.lazy_find(vswitch.sys_uuid)
+      switch = persister.host_virtual_switches.build(
+        :uid_ems    =>  vswitch.uuid,
+        :name       =>  vswitch.name,
+        :host       =>  host
+      )
+      persister.host_switches.build(:host => host, :switch => switch)
+    end
   end
 
   def lookup_power_state(state)
