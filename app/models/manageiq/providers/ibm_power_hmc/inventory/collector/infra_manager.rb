@@ -31,7 +31,7 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::InfraManager < Man
       $ibm_power_hmc_log.info("end collection")
     rescue IbmPowerHmc::Connection::HttpError => e
       $ibm_power_hmc_log.error("managed systems query failed: #{e}")
-    end  
+    end
   end
 
   def cecs
