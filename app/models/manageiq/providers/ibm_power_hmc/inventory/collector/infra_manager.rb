@@ -14,7 +14,7 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::InfraManager < Man
         $ibm_power_hmc_log.error("lpars query failed for #{sys.uuid}: #{e}")
         nil
       end.flatten.compact
-      
+ 
       @vswitches = @cecs.map do |sys|
         connection.virtual_switches(sys.uuid)
       rescue IbmPowerHmc::Connection::HttpError => e
