@@ -14,12 +14,13 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::InfraManager < Man
         $ibm_power_hmc_log.error("lpars query failed for #{sys.uuid}: #{e}")
         nil
       end.flatten.compact
- 
+
       @vswitches = @cecs.map do |sys|
         connection.virtual_switches(sys.uuid)
       rescue IbmPowerHmc::Connection::HttpError => e
-        $ibm_power_hmc_log.error("virtual_switches query failed for #{sys.uuid} reason=#{e.reason} message=#{e.message}")
-      end
+        $ibm_power_hmc_log.error("virtual_switches query failed for #{sys.uuid}: #{e}")
+        nil
+      end.flatten.compact
 
       @vioses = @cecs.map do |sys|
         connection.vioses(sys.uuid)
@@ -45,8 +46,6 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::InfraManager < Man
   def vswitches
     @vswitches || []
   end
-
-  private
 
   def vioses
     @vioses || []
