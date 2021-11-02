@@ -48,8 +48,11 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::TargetCollection <
   def vswitches
     $ibm_power_hmc_log.info("#{self.class}##{__method__}")
     @vswitches ||= manager.with_provider_connection do |connection|
-      references(:host_virtual_switches).map do |ems_ref|
-        connection.virtual_switch(ems_ref, sys.uuid)
+      virtual_switch_targets = target.targets.select { |t| t.association == :host_virtual_switches }
+      $ibm_power_hmc_log.info("VSWITCH_TARGETS = #{virtual_switch_targets}")
+      virtual_switch_targets.each do |t|
+        $ibm_power_hmc_log.info("t.manager_ref = #{t.manager_ref} ; t.manager_ref[:host] = #{t.manager_ref[:host]}")
+        connection.virtual_switch(t.manager_ref[:ems_ref], t.manager_ref[:host])
       rescue IbmPowerHmc::Connection::HttpError => e
         $ibm_power_hmc_log.error("error querying virtual_switches #{ems_ref}: #{e}") unless e.status == 404
         nil
@@ -69,10 +72,9 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::TargetCollection <
       when ManageIQ::Providers::IbmPowerHmc::InfraManager::Lpar, ManageIQ::Providers::IbmPowerHmc::InfraManager::Vios
         add_target(:vms, target.ems_ref)
       when HostSwitch
-        $ibm_power_hmc_log.info("#{self.class}##{__method__} PASSAGE POUR HOSTSWITCH")
         add_target(:host_virtual_switches, target.ems_ref)
       else
-        $ibm_power_hmc_log.info("#{self.class}##{__method__} #{target.class.name}")
+        $ibm_power_hmc_log.info("#{self.class}##{__method__} WHAT IS THE CLASS NAME ? #{target.class.name} ")
       end
     end
   end
