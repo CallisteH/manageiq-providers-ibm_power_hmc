@@ -86,7 +86,10 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Parser::InfraManager < Manage
       :raw_power_state => lpar.state,
       :host            => host
     )
-    parse_vm_hardware(vm, lpar)
+    hardware = parse_vm_hardware(vm, lpar)
+    parse_vm_operating_system(vm, lpar)
+    parse_vm_guest_devices(lpar, hardware)
+    parse_vm_advanced_settings(vm, lpar)
     vm
   end
 
@@ -107,6 +110,51 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Parser::InfraManager < Manage
       )
       persister.host_switches.build(:host => host, :switch => switch)
     end
+  end
+
+  def parse_vm_operating_system(vm, lpar)
+    os_info = lpar.os.split
+    persister.operating_systems.build(
+      :vm_or_template => vm,
+      :product_name   => os_info[0],
+      :version        => os_info[1],
+      :build_number   => os_info[2]
+    )
+  end
+
+  def parse_vm_guest_devices(lpar, hardware)
+    lpar.net_adap_uuids.map do |uuid|
+      next if collector.netadapters[uuid].nil?
+
+      mac_addr = collector.netadapters[uuid].macaddr.scan(/\w{2}/).join(':')
+      persister.guest_devices.build(
+        :hardware        => hardware,
+        :uid_ems         => uuid,
+        :device_name     => mac_addr,
+        :device_type     => "ethernet",
+        :controller_type => "ethernet",
+        :address         => mac_addr
+      )
+    end
+  end
+
+  def parse_vm_advanced_settings(vm, lpar)
+    persister.vms_and_templates_advanced_settings.build(
+      :resource     => vm,
+      :name         => "partition_id",
+      :display_name => _("Partition ID"),
+      :description  => _("The logical partition number"),
+      :value        => lpar.id.to_i,
+      :read_only    => true
+    )
+    persister.vms_and_templates_advanced_settings.build(
+      :resource     => vm,
+      :name         => "reference_code",
+      :display_name => _("Reference Code"),
+      :description  => _("The logical partition reference code"),
+      :value        => lpar.ref_code,
+      :read_only    => true
+    )
   end
 
   def lookup_power_state(state)
