@@ -32,7 +32,7 @@ class ManageIQ::Providers::IbmPowerHmc::InfraManager::EventTargetParser
         target_collection.add_target(:association => :vms, :manager_ref => {:ems_ref => uuid})
       when "VirtualSwitch"
         $ibm_power_hmc_log.info("#{self.class}##{__method__} VirtualSwitch uuid #{uuid}")
-        target_collection.add_target(:association => :host_virtual_switches, :manager_ref => {:uid_ems => uuid, :host => elems[-3]})
+        target_collection.add_target(:association => :hosts, :manager_ref => {:ems_ref => elems[-3]})
       end
     end
 

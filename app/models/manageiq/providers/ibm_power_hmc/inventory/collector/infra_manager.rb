@@ -25,7 +25,7 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::InfraManager < Man
   end
 
   def vswitches
-    @vswitches || []
+    @vswitches || {}
   end
 
   def vioses
@@ -39,12 +39,12 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::InfraManager < Man
   private
 
   def do_vswitches(connection)
-    @vswitches = @cecs.map do |sys|
-    connection.virtual_switches(sys.uuid)
+    @vswitches = {}
+    @cecs.each do |sys|
+      @vswitches[sys.uuid] = connection.virtual_switches(sys.uuid)
     rescue IbmPowerHmc::Connection::HttpError => e
       $ibm_power_hmc_log.error("virtual_switches query failed for #{sys.uuid}: #{e}")
-      nil
-    end.flatten.compact
+    end
   end
 
   def do_lpars(connection)

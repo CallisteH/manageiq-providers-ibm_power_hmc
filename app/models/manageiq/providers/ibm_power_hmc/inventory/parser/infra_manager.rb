@@ -6,7 +6,6 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Parser::InfraManager < Manage
     parse_cecs
     parse_lpars
     parse_vioses
-    parse_vswitches
   end
 
   def parse_cecs
@@ -23,6 +22,7 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Parser::InfraManager < Manage
 
       parse_host_operating_system(host, sys)
       parse_host_hardware(host, sys)
+      parse_vswitches(host, sys)
     end
   end
 
@@ -100,9 +100,8 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Parser::InfraManager < Manage
     )
   end
 
-  def parse_vswitches
-    collector.vswitches.each do |vswitch|
-      host = persister.hosts.lazy_find(vswitch.sys_uuid)
+  def parse_vswitches(host, sys)
+    collector.vswitches[sys.uuid].each do |vswitch|
       switch = persister.host_virtual_switches.build(
         :uid_ems => vswitch.uuid,
         :name    => vswitch.name,
