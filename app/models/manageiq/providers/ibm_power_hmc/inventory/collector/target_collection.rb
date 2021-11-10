@@ -20,11 +20,13 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::TargetCollection <
       end.compact
 
       @vswitches ||= {}
+      @vlans ||= {}
       @cecs.each do |cec|
         @vswitches[cec.uuid] = connection.virtual_switches(cec.uuid)
+        @vlans[cec.uuid] = connection.virtual_networks(cec.uuid)
       rescue IbmPowerHmc::Connection::HttpError => e
-        $ibm_power_hmc_log.error("error querying virtual_switches #{switch.uuid}: #{e}") unless e.status == 404
-      end
+        $ibm_power_hmc_log.error("error querying virtual_switches or virtual_networks for managed system  #{cec.uuid}: #{e}") unless e.status == 404
+      end 
     end
   end
 
@@ -80,6 +82,10 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::TargetCollection <
     @vswitches || {}
   end
 
+  def vlans
+    @vlans || {}
+  end
+
   private
 
   def parse_targets!
@@ -93,6 +99,8 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::TargetCollection <
         add_target(:vms, target.ems_ref)
       when HostSwitch
         add_target(:host_virtual_switches, target.ems_ref)
+      when Lan
+        add_target(:lans, target.ems_ref)
       else
         $ibm_power_hmc_log.info("#{self.class}##{__method__} WHAT IS THE CLASS NAME ? #{target.class.name} ")
       end

@@ -31,7 +31,13 @@ module ManageIQ::Providers::IbmPowerHmc::InfraManager::EventParser
           event_hash[:host_ems_ref] = elems[-3]
         end
       end
-    end
+      when "VirtualNetwork"
+        event_hash[:vlan_ems_ref] = uuid
+        # Check if the URI also contains /ManagedSystem/{uuid}/
+        if elems.length >= 4 && elems[-4] == "ManagedSystem"
+          event_hash[:host_ems_ref] = elems[-3]
+        end
+      end
 
     event_hash
   end
