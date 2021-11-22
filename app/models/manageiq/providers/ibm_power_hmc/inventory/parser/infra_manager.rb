@@ -115,13 +115,15 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Parser::InfraManager < Manage
   def parse_vlans(host, sys)
     collector.vlans[sys.uuid].each do |vlan|
       managed_system = persister.hosts.lazy_find(sys.uuid)
+      vswitch = persister.host_virtual_switches.lazy_find(:host => managed_system,  :uid_ems => vlan.vswitch_uuid)
       lan = persister.lans.build(
-        :uid_ems  => vlan.uuid,
-        :switch   => persister.host_virtual_switches.lazy_find(:host => managed_system, :uid_ems => vlan.vswitch_uuid),
-        :tag      => vlan.vlan_id,
-        :name     => vlan.name
+        :uid_ems   => vlan.uuid,
+        :switch    => vswitch,
+        :tag       => vlan.vlan_id,
+        :name      => vlan.name,
+        :ems_ref   => sys.uuid
       )
-      # persister.host_virtual_lans.build(:host => managed_system, :lan => vlan)  ## No table host_virtual_lans in database ? 
+      # persister.host_virtual_lans.build(vlan)  ## No table host_virtual_lans in database ? 
     end
   end
 
