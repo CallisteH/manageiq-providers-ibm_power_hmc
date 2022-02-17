@@ -56,15 +56,16 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::TargetCollection <
     manager.with_provider_connection do |connection|
       @vioses ||=
         references(:vms).map do |ems_ref|
-          connection.vios(ems_ref)
+          connection.vios(ems_ref) # we recover the VirtualIOServer object that has this ems_ref uuid.
         rescue IbmPowerHmc::Connection::HttpError => e
           $ibm_power_hmc_log.error("error querying vios #{ems_ref}: #{e}") unless e.status == 404
           nil
         end.compact
-
+      
       @vioses.each do |vios|
         do_netadapters_vios(connection, vios)
         do_sriov_elps_vios(connection, vios)
+        $ibm_power_hmc_log.info("#{self.class}##{__method__} received vscsi_lun_mappings_by_uuid : #{vscsi_lun_mappings_by_uuid}")
       end
     end
     @vioses || []
