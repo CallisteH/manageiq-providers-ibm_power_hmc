@@ -30,7 +30,6 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Parser::InfraManager < Manage
   end
 
   def parse_ssps
-    $ibm_power_hmc_log.info("#{self.class}##{__method__} : received ssps => #{collector.ssps}")
     collector.ssps.each do |ssp|
       persister.storages.build(
         :name        => ssp.name,
@@ -42,7 +41,9 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Parser::InfraManager < Manage
   end
 
   def parse_vm_disks(lpar, hardware)
+    $ibm_power_hmc_log.info("#{self.class}##{__method__} feature : collector.vscsi_lun_mappings_by_uuid[lpar.uuid] => #{collector.vscsi_lun_mappings_by_uuid[lpar.uuid]}")
     collector.vscsi_lun_mappings_by_uuid[lpar.uuid].to_a.each do |mapping|
+      $ibm_power_hmc_log.info("#{self.class}##{__method__} feature : mapping trouvé => #{mapping}")
       found_ssp_uuid = collector.ssp_lus_by_udid[mapping.storage.udid]
 
       persister.disks.build(
@@ -96,6 +97,7 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Parser::InfraManager < Manage
 
   def parse_vioses
     collector.vioses.each do |vios|
+      $ibm_power_hmc_log.info("#{self.class}##{__method__} feature/lus_targeted_refresh vios to update : #{vios}")
       parse_lpar_common(vios, ManageIQ::Providers::IbmPowerHmc::InfraManager::Vios.name)
       # Add VIOS specific parsing code here.
     end
@@ -119,6 +121,8 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Parser::InfraManager < Manage
 
     if type.eql?(ManageIQ::Providers::IbmPowerHmc::InfraManager::Lpar.name)
       parse_lpar_guest_devices(lpar, hardware)
+    else
+      parse_vm_disks(lpar, hardware)
     end
 
     parse_vm_operating_system(vm, lpar)

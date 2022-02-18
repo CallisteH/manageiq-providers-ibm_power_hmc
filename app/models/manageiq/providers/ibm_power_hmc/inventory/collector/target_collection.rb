@@ -61,14 +61,24 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::TargetCollection <
           $ibm_power_hmc_log.error("error querying vios #{ems_ref}: #{e}") unless e.status == 404
           nil
         end.compact
-      
+
       @vioses.each do |vios|
+        # $ibm_power_hmc_log.info("#{self.class}##{__method__} : feature => vios just received in target collection. vios: #{vios}")
         do_netadapters_vios(connection, vios)
         do_sriov_elps_vios(connection, vios)
-        $ibm_power_hmc_log.info("#{self.class}##{__method__} received vscsi_lun_mappings_by_uuid : #{vscsi_lun_mappings_by_uuid}")
       end
     end
     @vioses || []
+  end
+
+  def logical_units
+    $ibm_power_hmc_log.info("#{self.class}##{__method__}")
+    manager.with_provider_connection do |connection|
+      @vioses ||= connection.vioses()
+    rescue IbmPowerHmc::Connection::HttpError => e
+      $ibm_power_hmc_log.error("vioses query failed for #{ems_ref}: #{e}") unless e.status == 404
+      nil
+    end.compact
   end
 
   def templates
@@ -135,6 +145,8 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::TargetCollection <
         add_target!(:miq_templates, target.ems_ref)
       when ManageIQ::Providers::IbmPowerHmc::InfraManager::Storage
         add_target!(:storages, target.ems_ref)
+      when ManageIQ::Providers::IbmPowerHmc::InfraManager::Disk
+        add_target!(:disks, target.ems_ref)
       else
         $ibm_power_hmc_log.info("#{self.class}##{__method__} WHAT IS THE CLASS NAME ? #{target.class.name} ")
       end

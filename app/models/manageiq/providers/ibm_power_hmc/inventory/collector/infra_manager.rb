@@ -66,10 +66,13 @@ class ManageIQ::Providers::IbmPowerHmc::Inventory::Collector::InfraManager < Man
   end
 
   def vscsi_lun_mappings
+    vioses.each { |vios| $ibm_power_hmc_log.info("feature : vios recu = #{vios}")}
     @vscsi_lun_mappings ||= vioses.flat_map { |vios| vios.vscsi_mappings.select { |mapping| mapping.storage.kind_of?(IbmPowerHmc::LogicalUnit) } }
   end
 
   def vscsi_lun_mappings_by_uuid
+    $ibm_power_hmc_log.info("feature : fonction vscsi_lun_mappings_by_uuid")
+    vscsi_lun_mappings.each { |mapping| $ibm_power_hmc_log.info("feature : mapping.storage =  #{mapping.storage}") }
     @vscsi_lun_mappings_by_uuid ||= vscsi_lun_mappings.group_by(&:lpar_uuid)
   end
 

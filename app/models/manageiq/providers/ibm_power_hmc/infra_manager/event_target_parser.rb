@@ -41,6 +41,8 @@ class ManageIQ::Providers::IbmPowerHmc::InfraManager::EventTargetParser
         # instead of querying the full LPAR data.
         elems[:assoc] = :vms
         elems[:ems_ref] = elems[:uuid]
+      when "LogicalUnit"
+        elems[:ems_ref] = elems[:uuid]
       when "VirtualSwitch", "VirtualNetwork"
         if elems.key?(:manager_uuid)
           elems[:assoc] = :hosts
